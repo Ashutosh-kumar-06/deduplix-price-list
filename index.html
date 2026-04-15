@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeDupliX — Intelligent Price List Deduplication</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <!-- SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-mark">DeDupliX</div>
+        </div>
+        <nav class="nav">
+          <div class="nav-section-label">Overview</div>
+          <div
+            class="nav-item active"
+            data-page="dashboard"
+            onclick="window.navigate('dashboard')"
+          >
+            <span class="nav-icon">⬡</span> Dashboard
+          </div>
+          <div class="nav-section-label">Data</div>
+          <div
+            class="nav-item"
+            data-page="records"
+            onclick="window.navigate('records')"
+          >
+            <span class="nav-icon">⊞</span> PL Records
+          </div>
+          <div
+            class="nav-item"
+            data-page="upload"
+            onclick="window.navigate('upload')"
+          >
+            <span class="nav-icon">↑</span> Upload
+          </div>
+          <div class="nav-section-label">Deduplication</div>
+          <div
+            class="nav-item"
+            data-page="duplicates"
+            onclick="window.navigate('duplicates')"
+          >
+            <span class="nav-icon">⇄</span> Duplicate Review
+            <span class="nav-badge" id="dup-badge">7</span>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-pill">
+            <div class="user-avatar" id="user-av">U</div>
+            <div class="user-info">
+              <div class="user-name" id="user-name">User</div>
+            </div>
+          </div>
+          <button
+            id="logoutBtn"
+            style="width: 100%; margin-top: 12px"
+            onclick="window.logout && window.logout()"
+          >
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="topbar-title" id="page-title">Dashboard</div>
+            <div class="topbar-breadcrumb">
+              DeDupliX <span>/ <span id="bc">Overview</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="content" id="content"></div>
+      </main>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toasts"></div>
+
+    <!-- MODAL CONTAINER -->
+    <div id="modal-area"></div>
+
+    <script>
+      window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+      window.__APP_CONFIG__.API_BASE = window.__APP_CONFIG__.API_BASE || "/api";
+    </script>
+
+    <!-- Scripts -->
+    <script type="module">
+      import { initializeApp } from "/js/frontend/main.js";
+
+      // Initialize app when DOM is ready
+      document.addEventListener("DOMContentLoaded", () => {
+        initializeApp();
+      });
+    </script>
+  </body>
+</html>
