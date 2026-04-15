@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCTT8AMDlP_q0WwWGIFNnKNJUM5PNORw7M",
+  apiKey: process.env.Google_api,
   authDomain: "de-duplix-price-lsit-number.firebaseapp.com",
   projectId: "de-duplix-price-lsit-number",
   storageBucket: "de-duplix-price-lsit-number.firebasestorage.app",
