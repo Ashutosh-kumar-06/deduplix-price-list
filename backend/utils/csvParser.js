@@ -3,7 +3,15 @@ export function parseCSV(csvContent) {
   if (lines.length < 2)
     throw new Error("CSV file must have at least headers and one row");
 
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const headers = lines[0]
+    .split(",")
+    .map((h) =>
+      h
+        .trim()
+        .replace(/^\uFEFF/, "")
+        .replace(/^"|"$/g, ""),
+    )
+    .map((h) => h.toLowerCase());
   const records = [];
 
   for (let i = 1; i < lines.length; i++) {

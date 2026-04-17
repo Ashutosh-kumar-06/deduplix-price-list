@@ -6,6 +6,28 @@ import {
   normalizePLNumber,
 } from "../utils/duplicateChecker.js";
 
+function getFirstValue(record, keys) {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function extractPLNumber(record) {
+  return getFirstValue(record, [
+    "plNumber",
+    "pl_number",
+    "pl number",
+    "plno",
+    "pl_no",
+    "pl",
+  ]);
+}
+
 export async function uploadPriceList(req, res) {
   try {
     const { format, content } = req.body;
@@ -26,22 +48,41 @@ export async function uploadPriceList(req, res) {
         .json({ error: true, message: "Unsupported format" });
     }
 
-    // Map to PriceList fields
-    const priceListRecords = records.map((r) => ({
-      plNumber: r.plNumber || r.pl_number || r["PL Number"] || "",
-      description: r.description || r.desc || "",
-      norm: normalizePLNumber(
-        r.plNumber || r.pl_number || r["PL Number"] || "",
-      ),
-      status: "active",
-    }));
+    // Map to PriceList fields and skip rows without PL number.
+    const priceListRecords = records
+      .map((r) => {
+        const plNumber = extractPLNumber(r);
+
+        return {
+          plNumber,
+          description: getFirstValue(r, ["description", "desc"]),
+          norm: normalizePLNumber(plNumber),
+          status: "active",
+        };
+      })
+      .filter((r) => r.plNumber);
+
+    if (priceListRecords.length === 0) {
+      return res.status(400).json({
+        error: true,
+        message:
+          "No valid PL Number values found. Ensure your file includes a PL Number column and non-empty values.",
+      });
+    }
 
     await PriceList.insertMany(priceListRecords);
 
+    const skippedCount = records.length - priceListRecords.length;
+    const message =
+      skippedCount > 0
+        ? `Uploaded ${priceListRecords.length} records. Skipped ${skippedCount} rows with missing PL Number.`
+        : `Uploaded ${priceListRecords.length} records`;
+
     res.json({
       success: true,
-      message: `Uploaded ${priceListRecords.length} records`,
+      message,
       count: priceListRecords.length,
+      skipped: skippedCount,
     });
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
