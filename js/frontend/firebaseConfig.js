@@ -6,15 +6,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey:
-    window.__APP_CONFIG__?.FIREBASE_API_KEY ||
-    globalThis.process?.env?.Google_api ||
-    "",
-  authDomain: "de-duplix-price-lsit-number.firebaseapp.com",
-  projectId: "de-duplix-price-lsit-number",
-  storageBucket: "de-duplix-price-lsit-number.firebasestorage.app",
-  messagingSenderId: "72986338031",
-  appId: "1:72986338031:web:c6d0e1df12a22c4515f11a",
+  apiKey: window.__APP_CONFIG__?.FIREBASE_API_KEY || "",
+  authDomain: "pllist-ff754.firebaseapp.com",
+  projectId: "pllist-ff754",
+  storageBucket: "pllist-ff754.firebasestorage.app",
+  messagingSenderId: "648899449204",
+  appId: "1:648899449204:web:e5b016e0dbb532b7551c21",
+  measurementId: "G-V2P325E9EH",
 };
 
 let firebaseApp = null;
@@ -25,7 +23,7 @@ let pendingGoogleLoginPromise = null;
 function getFirebaseAuthContext() {
   if (!firebaseConfig.apiKey) {
     throw new Error(
-      "Google login is not configured. Set window.__APP_CONFIG__.FIREBASE_API_KEY.",
+      "Google login is not configured. Set FIREBASE_API_KEY in .env.local or provide window.__APP_CONFIG__.FIREBASE_API_KEY.",
     );
   }
 

@@ -9,6 +9,7 @@ import { connectDB } from "./backend/config/db.js";
 
 // Load environment variables
 dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env.local"), override: true });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
