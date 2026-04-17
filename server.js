@@ -7,11 +7,12 @@ import priceRoutes from "./backend/routes/priceRoutes.js";
 import authRoutes from "./backend/routes/authRoutes.js";
 import { connectDB } from "./backend/config/db.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 // Load environment variables
 dotenv.config();
 dotenv.config({ path: path.join(__dirname, ".env.local"), override: true });
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
