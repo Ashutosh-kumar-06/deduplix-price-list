@@ -3,7 +3,8 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import priceRoutes from "./backend/routes/priceRoutes.js"; // Auth hata diya kyunki ab Firebase hai
+import priceRoutes from "./backend/routes/priceRoutes.js";
+import authRoutes from "./backend/routes/authRoutes.js";
 import { connectDB } from "./backend/config/db.js";
 
 // Load environment variables
@@ -22,11 +23,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
 // API Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/prices", priceRoutes);
+
+// Runtime frontend config (safe public values only)
+app.get("/app-config.js", (req, res) => {
+  const firebaseApiKey =
+    process.env.FIREBASE_API_KEY || process.env.Google_api || "";
+
+  res.type("application/javascript").send(`
+window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+window.__APP_CONFIG__.FIREBASE_API_KEY = ${JSON.stringify(firebaseApiKey)};
+`);
+});
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "PL Dedup API running with Firebase Support" });
+  res.json({
+    status: "ok",
+    message: "PL Dedup API running with Firebase Support",
+  });
 });
 
 // Serve index.html for all unmatched routes

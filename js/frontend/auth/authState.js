@@ -2,6 +2,7 @@
 
 const AUTH_STORAGE_KEY = "pl_dedup_auth";
 const USER_STORAGE_KEY = "pl_dedup_user";
+const DEMO_MODE_KEY = "pl_dedup_demo_mode";
 
 export function getAuthToken() {
   return localStorage.getItem(AUTH_STORAGE_KEY);
@@ -24,4 +25,20 @@ export function clearAuth() {
 
 export function isAuthenticated() {
   return !!getAuthToken();
+}
+
+export function setDemoMode(enabled = true) {
+  if (enabled) {
+    localStorage.setItem(DEMO_MODE_KEY, "1");
+  } else {
+    localStorage.removeItem(DEMO_MODE_KEY);
+  }
+}
+
+export function isDemoMode() {
+  return localStorage.getItem(DEMO_MODE_KEY) === "1";
+}
+
+export function clearDemoMode() {
+  localStorage.removeItem(DEMO_MODE_KEY);
 }

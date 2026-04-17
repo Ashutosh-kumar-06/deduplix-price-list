@@ -1,6 +1,10 @@
 // ==================== SIDEBAR MANAGEMENT ====================
 import { showInfoToast } from "./toast.js";
-import { getCurrentAuthUser, clearAuth } from "../auth/authState.js";
+import {
+  getCurrentAuthUser,
+  clearAuth,
+  clearDemoMode,
+} from "../auth/authState.js";
 
 export function initSidebar(onNavigate) {
   window.navigateFunc = onNavigate;
@@ -32,8 +36,9 @@ export function updateUserDisplay() {
 
 export function logout() {
   clearAuth();
+  clearDemoMode();
   if (window.navigate) {
-    window.navigate("login");
+    window.navigate("landing");
   }
   showInfoToast("Logged out successfully");
 }

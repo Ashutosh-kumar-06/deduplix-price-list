@@ -71,6 +71,7 @@ export function renderSignupPage() {
 
   // --- Google Signup Handler ---
   googleSignupBtn.addEventListener("click", async () => {
+    googleSignupBtn.disabled = true;
     try {
       const user = await loginWithGoogle();
       if (user) {
@@ -78,16 +79,20 @@ export function renderSignupPage() {
           id: user.uid,
           name: user.displayName,
           email: user.email,
-          image: user.photoURL
+          image: user.photoURL,
         });
-        
+
         if (window.navigate) {
           window.navigate("dashboard");
         }
       }
     } catch (error) {
-      errorDiv.textContent = "Google Signup Error: " + error.message;
-      errorDiv.style.display = "block";
+      if (error?.code !== "auth/cancelled-popup-request") {
+        errorDiv.textContent = "Google Signup Error: " + error.message;
+        errorDiv.style.display = "block";
+      }
+    } finally {
+      googleSignupBtn.disabled = false;
     }
   });
 

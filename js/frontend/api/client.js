@@ -47,7 +47,12 @@ class APIClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      const isJSON = contentType.includes("application/json");
+
+      const data = isJSON
+        ? await response.json()
+        : { message: await response.text() };
 
       if (!response.ok) {
         throw new Error(data.message || `API Error: ${response.statusText}`);
@@ -114,9 +119,17 @@ class APIClient {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    bulkResolve: (data) =>
+      this.request("/prices/bulk-resolve", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
     getStats: () => this.request("/prices/stats"),
     downloadCleaned: () => {
       window.location.href = `${this.baseURL}/prices/download-cleaned`;
+    },
+    downloadDuplicateReport: () => {
+      window.location.href = `${this.baseURL}/prices/download-duplicates`;
     },
   };
 }

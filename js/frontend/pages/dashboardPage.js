@@ -75,12 +75,25 @@ export async function renderDashboard() {
       <div class="stat-card amber">
         <div class="stat-label">Duplicates Found</div>
         <div class="stat-value">${stats.duplicatesFound}</div>
-        <div class="stat-sub">Exact groups</div>
+        <div class="stat-sub">Exact + fuzzy groups</div>
       </div>
       <div class="stat-card red">
         <div class="stat-label">Resolved</div>
         <div class="stat-value">${stats.resolvedCount}</div>
         <div class="stat-sub">Delete or merge actions</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin:20px 0">
+      <div class="card">
+        <div class="section-title">Upload Trends (7 days)</div>
+        <div class="section-sub">Records uploaded per day</div>
+        ${renderUploadTrendChart(stats.uploadTrend || [])}
+      </div>
+      <div class="card">
+        <div class="section-title">Data Quality Breakdown</div>
+        <div class="section-sub">Clean vs duplicate vs removed</div>
+        ${renderQualityBreakdownChart(stats.qualityBreakdown || [], stats.qualityPercent || 0)}
       </div>
     </div>
 
@@ -102,6 +115,81 @@ export async function renderDashboard() {
   }
 }
 
+function renderUploadTrendChart(trend) {
+  if (!trend.length) {
+    return `<div class="empty-state" style="padding:20px 0">No trend data available</div>`;
+  }
+
+  const maxCount = Math.max(
+    ...trend.map((point) => Number(point.count || 0)),
+    1,
+  );
+
+  return `
+    <div class="trend-bars">
+      ${trend
+        .map((point) => {
+          const count = Number(point.count || 0);
+          const height = Math.max(8, Math.round((count / maxCount) * 100));
+          return `
+            <div class="trend-col">
+              <div class="trend-count">${count}</div>
+              <div class="trend-bar-wrap">
+                <div class="trend-bar" style="height:${height}%"></div>
+              </div>
+              <div class="trend-label">${point.label}</div>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderQualityBreakdownChart(breakdown, qualityPercent) {
+  if (!breakdown.length) {
+    return `<div class="empty-state" style="padding:20px 0">No breakdown data available</div>`;
+  }
+
+  const total = breakdown.reduce(
+    (sum, item) => sum + Number(item.value || 0),
+    0,
+  );
+  const clean = Number(
+    breakdown.find((item) => item.label === "Clean")?.value || 0,
+  );
+  const dup = Number(
+    breakdown.find((item) => item.label === "Duplicate")?.value || 0,
+  );
+  const removed = Number(
+    breakdown.find((item) => item.label === "Removed")?.value || 0,
+  );
+
+  const cleanPct = total ? Math.round((clean / total) * 100) : 0;
+  const dupPct = total ? Math.round((dup / total) * 100) : 0;
+  const removedPct = Math.max(0, 100 - cleanPct - dupPct);
+
+  return `
+    <div class="quality-ring-wrap">
+      <div class="quality-ring" style="background: conic-gradient(var(--green) 0 ${cleanPct}%, var(--accent) ${cleanPct}% ${cleanPct + dupPct}%, var(--red) ${cleanPct + dupPct}% 100%)">
+        <div class="quality-ring-inner">
+          <strong>${qualityPercent}%</strong>
+          <span>Quality</span>
+        </div>
+      </div>
+      <div class="quality-legend">
+        <div><span class="dot clean"></span> Clean: ${clean}</div>
+        <div><span class="dot dup"></span> Duplicate: ${dup}</div>
+        <div><span class="dot removed"></span> Removed: ${removed}</div>
+      </div>
+    </div>
+    <div class="quality-meter">
+      <div class="quality-meter-fill" style="width:${Math.max(0, Math.min(100, qualityPercent))}%"></div>
+    </div>
+    <div class="section-sub" style="margin-top:8px">Clean records ratio among active records</div>
+  `;
+}
+
 function renderDuplicatePreview(duplicates) {
   const preview = duplicates.slice(0, 4);
 
@@ -119,7 +207,7 @@ function renderDuplicatePreview(duplicates) {
       <div class="section-header">
         <div>
           <div class="section-title">Duplicate Preview</div>
-          <div class="section-sub">Top exact duplicate groups</div>
+          <div class="section-sub">Top exact and fuzzy duplicate groups</div>
         </div>
         <button class="btn sm" onclick="window.navigate?.('duplicates')">Review all →</button>
       </div>
@@ -131,7 +219,7 @@ function renderDuplicatePreview(duplicates) {
             <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:12px">
               <div>
                 <div class="mono" style="font-size:12px">${first.plNumber} ↔ ${second.plNumber}</div>
-                <div style="font-size:11px;color:var(--text3)">Group key: ${group.key}</div>
+                <div style="font-size:11px;color:var(--text3)">Group key: ${group.norm} • ${(group.type || "exact").toUpperCase()} • ${group.matchScore || 100}%</div>
               </div>
               <span class="tag review">${group.records.length} records</span>
             </div>

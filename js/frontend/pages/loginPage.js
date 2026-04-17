@@ -60,6 +60,7 @@ export function renderLoginPage() {
 
   // --- Google Login Handler ---
   googleLoginBtn.addEventListener("click", async () => {
+    googleLoginBtn.disabled = true;
     try {
       const user = await loginWithGoogle();
       if (user) {
@@ -69,7 +70,7 @@ export function renderLoginPage() {
           id: user.uid,
           name: user.displayName,
           email: user.email,
-          image: user.photoURL
+          image: user.photoURL,
         });
 
         if (!localStorage.getItem("deduplix_tour_completed")) {
@@ -81,8 +82,12 @@ export function renderLoginPage() {
         }
       }
     } catch (error) {
-      errorDiv.textContent = "Google Login Error: " + error.message;
-      errorDiv.style.display = "block";
+      if (error?.code !== "auth/cancelled-popup-request") {
+        errorDiv.textContent = "Google Login Error: " + error.message;
+        errorDiv.style.display = "block";
+      }
+    } finally {
+      googleLoginBtn.disabled = false;
     }
   });
 

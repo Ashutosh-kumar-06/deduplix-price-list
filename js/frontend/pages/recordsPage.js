@@ -4,6 +4,7 @@ import { showErrorToast, showSuccessToast } from "../ui/toast.js";
 
 let recSearch = "";
 let recFilter = "active";
+let selectedRecordIds = new Set();
 
 export async function renderRecords() {
   const c = document.getElementById("content");
@@ -23,7 +24,11 @@ export async function renderRecords() {
           <div class="section-title">PL Records</div>
           <div class="section-sub">${records.length} records found</div>
         </div>
-        <button class="btn primary" id="tour-record-add" onclick="window.openAddModalFunc?.()">+ New Record</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn" onclick="window.bulkMarkDuplicateFunc?.()" ${selectedRecordIds.size ? "" : "disabled"}>Mark Duplicate</button>
+          <button class="btn danger" onclick="window.bulkDeleteRecordsFunc?.()" ${selectedRecordIds.size ? "" : "disabled"}>Bulk Delete</button>
+          <button class="btn primary" id="tour-record-add" onclick="window.openAddModalFunc?.()">+ New Record</button>
+        </div>
       </div>
 
       <div class="search-row">
@@ -49,6 +54,9 @@ export async function renderRecords() {
           <table>
             <thead>
               <tr>
+                <th style="width:40px">
+                  <input type="checkbox" onchange="window.toggleAllRecordsFunc?.(this.checked)">
+                </th>
                 <th>PL Number</th>
                 <th>Normalized</th>
                 <th>Description</th>
@@ -64,6 +72,9 @@ export async function renderRecords() {
                       .map(
                         (record) => `
                   <tr>
+                    <td>
+                      <input type="checkbox" ${selectedRecordIds.has(record._id) ? "checked" : ""} onchange="window.toggleRecordSelectionFunc?.('${record._id}')">
+                    </td>
                     <td class="mono">${record.plNumber}</td>
                     <td class="mono" style="color:var(--text3);font-size:11px">${record.norm}</td>
                     <td>${record.description || "-"}</td>
@@ -77,7 +88,7 @@ export async function renderRecords() {
                 `,
                       )
                       .join("")
-                  : `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">◻</div><div class="empty-title">No records found</div></div></td></tr>`
+                  : `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">◻</div><div class="empty-title">No records found</div></div></td></tr>`
               }
             </tbody>
           </table>
@@ -93,6 +104,35 @@ export async function renderRecords() {
 }
 
 function bindRecordActions() {
+  window.toggleRecordSelectionFunc = (id) => {
+    if (selectedRecordIds.has(id)) {
+      selectedRecordIds.delete(id);
+    } else {
+      selectedRecordIds.add(id);
+    }
+    renderRecords();
+  };
+
+  window.toggleAllRecordsFunc = async (checked) => {
+    if (!checked) {
+      selectedRecordIds.clear();
+      renderRecords();
+      return;
+    }
+
+    try {
+      const response = await apiClient.prices.getAll({
+        search: recSearch,
+        status: recFilter,
+      });
+      const ids = (response.data || []).map((record) => record._id);
+      selectedRecordIds = new Set(ids);
+      renderRecords();
+    } catch (error) {
+      showErrorToast(error.message || "Selection failed");
+    }
+  };
+
   window.updateRecordsFunc = (value, type) => {
     if (type === "search") {
       recSearch = value;
@@ -100,6 +140,64 @@ function bindRecordActions() {
       recFilter = value;
     }
     renderRecords();
+  };
+
+  window.bulkMarkDuplicateFunc = async () => {
+    const ids = [...selectedRecordIds];
+    if (!ids.length) {
+      showErrorToast("Select records first");
+      return;
+    }
+
+    try {
+      await apiClient.prices.bulkResolve({
+        action: "mark-duplicate",
+        ids,
+        performedBy: "Alex Doshi",
+      });
+      selectedRecordIds.clear();
+      showSuccessToast("Selected records marked as duplicate");
+      renderRecords();
+    } catch (error) {
+      showErrorToast(error.message || "Bulk update failed");
+    }
+  };
+
+  window.bulkDeleteRecordsFunc = async () => {
+    const ids = [...selectedRecordIds];
+    if (!ids.length) {
+      showErrorToast("Select records first");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${ids.length} selected records? This will mark them as removed.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.prices.bulkResolve({
+        action: "delete",
+        ids,
+        performedBy: "Alex Doshi",
+      });
+
+      selectedRecordIds.clear();
+
+      if ((response?.modified || 0) === 0) {
+        showErrorToast(
+          "No records were deleted. Please refresh and try again.",
+        );
+      } else {
+        showSuccessToast(`Deleted ${response.modified} records`);
+      }
+
+      renderRecords();
+    } catch (error) {
+      showErrorToast(error.message || "Bulk delete failed");
+    }
   };
 
   window.openAddModalFunc = openAddModal;

@@ -8,6 +8,9 @@ const priceListSchema = new mongoose.Schema(
       index: true,
     },
     description: String,
+    category: String,
+    price: Number,
+    vendor: String,
     status: {
       type: String,
       enum: ["active", "duplicate", "removed"],
