@@ -1,44 +1,54 @@
 # DeDupliX
 
-DeDupliX is a full-stack web app for uploading price lists, detecting exact and fuzzy duplicates, resolving conflicts, and exporting cleaned data.
+DeDupliX is a full-stack web app for uploading price lists, finding exact and fuzzy duplicates, resolving conflicts, and exporting cleaned records.
 
-## Features
+## 1) Core Capabilities
 
 - Upload price lists from CSV or JSON.
-- Normalize PL numbers and detect duplicates with exact + fuzzy matching.
-- Review duplicate groups with score metadata (`matchScore`, `reason`, `type`).
-- Resolve duplicates with merge/delete actions and resolution history tracking.
-- Manage records (create, edit, soft-delete).
-- Export cleaned records and duplicate reports as CSV.
-- Dashboard stats for data quality and upload trend.
+- Normalize PL numbers before comparison.
+- Detect duplicate groups with metadata (matchScore, reason, type).
+- Review duplicate groups and resolve by keep, merge, or delete workflow.
+- Manage records with create, edit, and soft delete operations.
+- Export cleaned data and duplicate reports in CSV format.
+- Track quality with dashboard statistics.
 
-## Tech Stack
+## 2) Authentication Model (Important)
 
-- Backend: Node.js, Express, MongoDB, Mongoose, JWT
-- Frontend: Vanilla JavaScript modules + static HTML/CSS
-- Auth: Email/password auth (Google OAuth routes are currently stubbed)
+DeDupliX currently supports two auth paths:
 
-## Prerequisites
+- Email and password auth through backend JWT endpoints.
+- Google sign-in through Firebase popup on the frontend.
 
-- Node.js 18+
-- MongoDB connection string
+Important architecture note:
 
-## Getting Started
+- Frontend Google login is working via Firebase SDK popup flow.
+- Backend routes /api/auth/google and /api/auth/google/callback are currently disabled and return 501 by design.
+- This means Google login does not rely on backend Passport routes in the current implementation.
 
-1. Install dependencies:
+## 3) Tech Stack
 
-```bash
-npm install
-```
+- Frontend: Vanilla JavaScript modules, HTML, CSS
+- Backend: Node.js, Express
+- Database: MongoDB with Mongoose
+- Auth: JWT (email/password) + Firebase Google popup auth (frontend)
 
-2. Create/update `.env` in the project root:
+## 4) Prerequisites
 
-```env
+- Node.js 18 or later
+- npm
+- MongoDB connection string (MongoDB Atlas or local)
+- Firebase project (for Google popup sign-in)
+
+## 5) Environment Variables
+
+Create a .env file in the project root:
+
 PORT=3000
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db>?retryWrites=true&w=majority
 JWT_SECRET=replace-with-a-strong-secret
 
-# Optional Firebase public config exposed through /app-config.js
+# Firebase public config exposed via /app-config.js
+
 FIREBASE_API_KEY=
 FIREBASE_AUTH_DOMAIN=
 FIREBASE_PROJECT_ID=
@@ -46,135 +56,176 @@ FIREBASE_STORAGE_BUCKET=
 FIREBASE_MESSAGING_SENDER_ID=
 FIREBASE_APP_ID=
 FIREBASE_MEASUREMENT_ID=
-```
 
-3. Start the app:
+Notes:
 
-```bash
+- FIREBASE_API_KEY is required for Google popup login.
+- If FIREBASE_AUTH_DOMAIN is empty, defaults are used from server-side runtime config.
+- GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_CALLBACK_URL are not required for the current live Google login path because backend Passport Google routes are not active.
+
+## 6) Setup and Run
+
+1. Install dependencies
+
+npm install
+
+2. Start in development mode
+
 npm run dev
-```
 
-Or production mode:
+3. Start in production mode
 
-```bash
 npm start
-```
 
-4. Open:
+4. Open in browser
 
-```text
 http://localhost:3000
-```
 
-## Default Seed Data
+## 7) Verify Google Sign-In Is Working
 
-On first successful DB connection, the app seeds:
+Use this checklist:
 
-- Default user: `user@example.com` / `user12345`
-- Sample price list records (if collection is empty)
+1. In Firebase Console, enable Google provider in Authentication.
+2. Add localhost to Authorized domains in Firebase Authentication settings.
+3. Set FIREBASE_API_KEY (and ideally all Firebase vars) in .env.
+4. Restart the server.
+5. Open Login or Signup page and click Continue with Google.
+6. On success, user is stored in localStorage and redirected to dashboard.
 
-## Upload Format Notes
+Behavior details:
 
-- CSV headers are normalized to lowercase.
-- UTF-8 BOM in the first header is supported.
-- Delimiter auto-detection supports comma, semicolon, and tab.
-- Rows without a valid PL number are skipped.
+- Google sign-in is executed by signInWithPopup in frontend firebaseConfig module.
+- Successful login stores token and user payload in localStorage keys used by authState.
 
-Recognized PL number header variants include:
+## 8) API Summary
 
-- `pl number`, `plnumber`, `pl no`, `pl`, `price list number`
-
-Common mapped fields:
-
-- Description: `description`, `desc`, `product name`, `item name`, `title`
-- Category: `category`, `cat`
-- Vendor: `vendor`, `supplier`
-- Price: `price`, `rate`, `amount`, `cost`
-
-## API Overview
-
-Base URL: `/api`
+Base URL: /api
 
 Auth:
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /auth/profile` (requires bearer token)
+- POST /auth/register
+- POST /auth/login
+- GET /auth/profile (Bearer token)
+- GET /auth/google (currently returns 501)
+- GET /auth/google/callback (currently returns 501)
 
 Price list:
 
-- `POST /prices/upload`
-- `GET /prices`
-- `GET /prices/stats`
-- `GET /prices/duplicates`
-- `GET /prices/download-cleaned`
-- `GET /prices/download-duplicates`
-- `POST /prices`
-- `PUT /prices/:id`
-- `DELETE /prices/:id` (soft delete via `status=removed`)
-- `POST /prices/resolve`
-- `DELETE /prices/remove-duplicate/:id`
-- `POST /prices/bulk-resolve`
+- POST /prices/upload
+- GET /prices
+- GET /prices/stats
+- GET /prices/duplicates
+- GET /prices/download-cleaned
+- GET /prices/download-duplicates
+- POST /prices
+- PUT /prices/:id
+- DELETE /prices/:id (soft delete)
+- POST /prices/resolve
+- DELETE /prices/remove-duplicate/:id
+- POST /prices/bulk-resolve
 
-Health check:
+Health:
 
-- `GET /api/health`
+- GET /api/health
 
-## Project Structure
+## 9) Default Seed Data
 
-```text
-.
-├── index.html
-├── server.js
-├── package.json
-├── test.json
-├── backend/
-│   ├── config/
-│   │   ├── db.js
-│   │   └── passport.js
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   └── priceController.js
-│   ├── middleware/
-│   │   └── authMiddleware.js
-│   ├── models/
-│   │   ├── PriceList.js
-│   │   ├── ResolutionHistory.js
-│   │   └── User.js
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   └── priceRoutes.js
-│   └── utils/
-│       ├── csvParser.js
-│       └── duplicateChecker.js
-├── css/
-│   └── styles.css
-└── js/
-    └── frontend/
-        ├── firebaseConfig.js
-        ├── main.js
-        ├── navigation.js
-        ├── api/
-        │   └── client.js
-        ├── auth/
-        │   └── authState.js
-        ├── pages/
-        │   ├── dashboardPage.js
-        │   ├── duplicatesPage.js
-        │   ├── landingPage.js
-        │   ├── loginPage.js
-        │   ├── recordsPage.js
-        │   ├── signupPage.js
-        │   └── uploadPage.js
-        └── ui/
-            ├── modal.js
-            ├── sidebar.js
-            ├── toast.js
-            ├── topbar.js
-            └── tour.js
-```
+On first successful DB connection:
 
-## Notes
+- Creates default user if missing: user@example.com / user12345
+- Seeds sample price list records if collection is empty
 
-- Google OAuth endpoints currently return `501 Not Implemented` unless Passport strategy wiring is completed.
-- If `MONGODB_URI` is missing, the server exits with an explicit configuration error.
+## 10) Upload Parsing Rules
+
+- CSV headers are normalized to lowercase.
+- UTF-8 BOM in first header is handled.
+- Delimiter auto-detection supports comma, semicolon, and tab.
+- Rows without a valid PL number are skipped.
+
+Recognized PL number header variants:
+
+- pl number
+- plnumber
+- pl no
+- pl
+- price list number
+
+Common mapped fields:
+
+- Description: description, desc, product name, item name, title
+- Category: category, cat
+- Vendor: vendor, supplier
+- Price: price, rate, amount, cost
+
+## 11) Project Structure
+
+deduplix-price-list/
+index.html
+server.js
+package.json
+backend/
+config/
+db.js
+passport.js
+controllers/
+authController.js
+priceController.js
+middleware/
+authMiddleware.js
+models/
+PriceList.js
+ResolutionHistory.js
+User.js
+routes/
+authRoutes.js
+priceRoutes.js
+utils/
+csvParser.js
+duplicateChecker.js
+css/
+styles.css
+js/frontend/
+firebaseConfig.js
+main.js
+navigation.js
+api/client.js
+auth/authState.js
+pages/
+dashboardPage.js
+duplicatesPage.js
+landingPage.js
+loginPage.js
+recordsPage.js
+signupPage.js
+uploadPage.js
+ui/
+modal.js
+sidebar.js
+toast.js
+topbar.js
+tour.js
+
+## 12) Known Limitations
+
+- Backend Passport Google endpoints are stubbed and not part of active login flow.
+- Google session persistence currently depends on frontend localStorage state.
+
+## 13) Troubleshooting
+
+1. Google popup does not open
+
+- Check browser popup blocking settings.
+- Ensure FIREBASE_API_KEY is present.
+
+2. Google sign-in fails with domain/auth errors
+
+- Verify Authorized domains in Firebase Authentication include localhost.
+- Confirm FIREBASE_AUTH_DOMAIN matches your Firebase project.
+
+3. Server fails at startup
+
+- Check that MONGODB_URI is set and valid.
+
+4. API calls fail with 401
+
+- Ensure token exists in localStorage and is sent in Authorization header.
